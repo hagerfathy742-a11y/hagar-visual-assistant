@@ -19,29 +19,12 @@ try:
 except Exception:
     api_key = os.getenv("GEMINI_API_KEY")
 
-# تصميم واجهة روبوت عصرية فخمة متجاوبة مع الموبايل والكمبيوتر
 st.markdown("""
 <style>
     @import url('https://googleapis.com');
-    
-    html, body, [class*="css"] {
-        font-family: 'Cairo', sans-serif;
-        direction: rtl;
-        text-align: right;
-    }
-    
-    /* إخفاء أي بقايا للقائمة الجانبية عند إغلاقها على الموبايل */
-    [data-testid="stSidebar"][aria-expanded="false"] {
-        display: none !important;
-    }
-
-    /* خلفية التطبيق الرئيسية */
-    .stApp {
-        background: radial-gradient(circle at top, #1E1B4B 0%, #090D16 65%);
-        color: #F8FAFC;
-    }
-
-    /* كارت الروبوت العلوي */
+    html, body, [class*="css"] { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; }
+    [data-testid="stSidebar"][aria-expanded="false"] { display: none !important; }
+    .stApp { background: radial-gradient(circle at top, #1E1B4B 0%, #090D16 65%); color: #F8FAFC; }
     .robot-card {
         background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
         border: 1.5px solid rgba(56, 189, 248, 0.45);
@@ -51,118 +34,55 @@ st.markdown("""
         box-shadow: 0 12px 35px rgba(56, 189, 248, 0.2), inset 0 0 20px rgba(139, 92, 246, 0.15);
         margin-bottom: 22px;
     }
-
-    /* رأس الروبوت والأنيميشن */
     .robot-head {
-        width: 105px;
-        height: 90px;
-        margin: 0 auto 14px auto;
+        width: 105px; height: 90px; margin: 0 auto 14px auto;
         background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
-        border-radius: 28px;
-        border: 3px solid #38BDF8;
+        border-radius: 28px; border: 3px solid #38BDF8;
         box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        animation: hoverRobot 2.8s ease-in-out infinite;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        position: relative; animation: hoverRobot 2.8s ease-in-out infinite;
     }
-    .robot-antenna {
-        width: 6px;
-        height: 16px;
-        background: #38BDF8;
-        position: absolute;
-        top: -18px;
-        border-radius: 4px;
-    }
+    .robot-antenna { width: 6px; height: 16px; background: #38BDF8; position: absolute; top: -18px; border-radius: 4px; }
     .robot-antenna::after {
-        content: "";
-        width: 12px;
-        height: 12px;
-        background: #A855F7;
-        border-radius: 50%;
-        position: absolute;
-        top: -8px;
-        left: -3px;
-        box-shadow: 0 0 12px #A855F7;
+        content: ""; width: 12px; height: 12px; background: #A855F7; border-radius: 50%;
+        position: absolute; top: -8px; left: -3px; box-shadow: 0 0 12px #A855F7;
     }
-    .robot-eyes {
-        display: flex;
-        gap: 20px;
-        margin-bottom: 10px;
-    }
+    .robot-eyes { display: flex; gap: 20px; margin-bottom: 10px; }
     .eye {
-        width: 20px;
-        height: 20px;
-        background: #38BDF8;
-        border-radius: 50%;
-        box-shadow: 0 0 14px #38BDF8, 0 0 28px #38BDF8;
-        animation: blinkEye 3.5s infinite;
+        width: 20px; height: 20px; background: #38BDF8; border-radius: 50%;
+        box-shadow: 0 0 14px #38BDF8, 0 0 28px #38BDF8; animation: blinkEye 3.5s infinite;
     }
     .robot-mouth {
-        width: 34px;
-        height: 6px;
-        background: #A855F7;
-        border-radius: 10px;
-        box-shadow: 0 0 10px #A855F7;
-        animation: talkPulse 1.2s infinite alternate;
+        width: 34px; height: 6px; background: #A855F7; border-radius: 10px;
+        box-shadow: 0 0 10px #A855F7; animation: talkPulse 1.2s infinite alternate;
     }
-
-    @keyframes hoverRobot {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-7px); }
-    }
-    @keyframes blinkEye {
-        0%, 92%, 100% { transform: scaleY(1); }
-        96% { transform: scaleY(0.1); }
-    }
-    @keyframes talkPulse {
-        0% { width: 22px; opacity: 0.7; }
-        100% { width: 38px; opacity: 1; }
-    }
-
+    @keyframes hoverRobot { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-7px); } }
+    @keyframes blinkEye { 0%, 92%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+    @keyframes talkPulse { 0% { width: 22px; opacity: 0.7; } 100% { width: 38px; opacity: 1; } }
     .robot-title {
-        font-size: 1.65rem;
-        font-weight: 800;
+        font-size: 1.65rem; font-weight: 800;
         background: linear-gradient(90deg, #38BDF8, #C084FC);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 6px;
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px;
     }
-    .robot-sub {
-        color: #CBD5E1;
-        font-size: 0.95rem;
-        margin: 0;
-    }
-
-    /* تحسين الأزرار والكروت */
+    .robot-sub { color: #CBD5E1; font-size: 0.95rem; margin: 0; }
     .stButton > button {
         background: linear-gradient(135deg, #2563EB 0%, #9333EA 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 14px !important;
-        font-weight: 700 !important;
-        padding: 12px 20px !important;
+        color: white !important; border: none !important; border-radius: 14px !important;
+        font-weight: 700 !important; padding: 12px 20px !important;
         box-shadow: 0 6px 20px rgba(147, 51, 234, 0.35) !important;
     }
     .stChatMessage {
         background: rgba(30, 41, 59, 0.75) !important;
         border: 1px solid rgba(148, 163, 184, 0.2) !important;
-        border-radius: 16px !important;
-        direction: rtl;
-        text-align: right;
+        border-radius: 16px !important; direction: rtl; text-align: right;
     }
     div[data-testid="stRadio"] > div {
-        background: rgba(30, 41, 59, 0.6);
-        padding: 10px 14px;
-        border-radius: 14px;
-        border: 1px solid rgba(56, 189, 248, 0.25);
+        background: rgba(30, 41, 59, 0.6); padding: 10px 14px;
+        border-radius: 14px; border: 1px solid rgba(56, 189, 248, 0.25);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# دالة النطق السريع التلقائي (1.35x سرعة طبيعية ونشيطة)
 def autoplay_fast_audio(text_to_speak):
     try:
         clean_text = text_to_speak.replace("*", "").replace("#", "")
@@ -189,12 +109,7 @@ def autoplay_fast_audio(text_to_speak):
 
 def ask_gemini(contents_list):
     client = genai.Client(api_key=api_key)
-    candidate_models = [
-        "gemini-2.5-flash-lite",
-        "gemini-2.5-flash",
-        "gemini-2.0-flash-lite",
-        "gemini-2.0-flash"
-    ]
+    candidate_models = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash"]
     try:
         for m in client.models.list():
             name = m.name.replace("models/", "")
@@ -206,10 +121,7 @@ def ask_gemini(contents_list):
     last_err = None
     for model_name in candidate_models:
         try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=contents_list
-            )
+            response = client.models.generate_content(model=model_name, contents=contents_list)
             if response and response.text:
                 return response.text
         except Exception as err:
@@ -217,14 +129,10 @@ def ask_gemini(contents_list):
             continue
     raise last_err
 
-# إعدادات اختيارية في القائمة الجانبية (مخفية افتراضياً لمنع تشويه شاشة الموبايل)
 with st.sidebar:
     st.header("⚙️ إعدادات الروبوت")
     robot_name = st.text_input("اسم الروبوت", value="روبوت هاجر الذكي")
-    mode = st.selectbox(
-        "وضع التشغيل:",
-        ["🌍 شامل (يتعرف على أي شيء ويقدّر سعره)", "🛍️ مخصص لكتالوج متجر"]
-    )
+    mode = st.selectbox("وضع التشغيل:", ["🌍 شامل (يتعرف على أي شيء ويقدّر سعره)", "🛍️ مخصص لكتالوج متجر"])
     whatsapp = st.text_input("رقم الواتساب", value="01000000000")
     catalog_text = ""
     if mode == "🛍️ مخصص لكتالوج متجر":
@@ -239,15 +147,11 @@ with st.sidebar:
         else:
             catalog_text = st.text_area("قائمة المنتجات:", value="", height=90)
 
-# واجهة رأس الروبوت المضيئة
 st.markdown(f"""
 <div class="robot-card">
     <div class="robot-head">
         <div class="robot-antenna"></div>
-        <div class="robot-eyes">
-            <div class="eye"></div>
-            <div class="eye"></div>
-        </div>
+        <div class="robot-eyes"><div class="eye"></div><div class="eye"></div></div>
         <div class="robot-mouth"></div>
     </div>
     <div class="robot-title">🤖 {robot_name}</div>
@@ -262,7 +166,6 @@ if "current_image" not in st.session_state:
 if "last_processed_id" not in st.session_state:
     st.session_state.last_processed_id = None
 
-# قسم إدخال الصورة بتصميم نظيف
 st.markdown("### 📸 عين الروبوت")
 input_type = st.radio("اختر مصدر الرؤية:", ["📸 الكاميرا المباشرة", "📁 رفع صورة"], horizontal=True)
 img_file = st.camera_input("التقط صورة ليراها الروبوت") if input_type == "📸 الكاميرا المباشرة" else st.file_uploader("اختر صورة من جهازك", type=["jpg", "jpeg", "png"])
@@ -291,3 +194,26 @@ if img_file is not None:
                         sys_prompt = f"""
                         أنت '{robot_name}'، روبوت مبيعات بصري ذكي.
                         تحدث باللهجة المصرية السريعة والمباشرة في 3 إلى 4 جمل فقط:
+                        1. حدد المنتج الموجود في الصورة وسعره في السوق.
+                        2. قارنه بالكتالوج التالي: {catalog_text}، واذكر سعره أو اعرض رقم واتساب ({whatsapp}).
+                        """
+                    
+                    first_reply = ask_gemini([st.session_state.current_image, sys_prompt])
+                    st.session_state.last_processed_id = file_id
+                    st.session_state.chat_history = [{"role": "assistant", "content": first_reply}]
+                    autoplay_fast_audio(first_reply)
+                except Exception as e:
+                    st.error(f"حدث خطأ: {e}")
+
+if st.session_state.chat_history:
+    st.markdown("### 💬 حوار الروبوت")
+    for msg in st.session_state.chat_history:
+        avatar = "🤖" if msg["role"] == "assistant" else "🧑"
+        with st.chat_message(msg["role"], avatar=avatar):
+            st.markdown(msg["content"])
+
+    if st.button("🗑️ محادثة جديدة", use_container_width=True):
+        st.session_state.chat_history = []
+        st.session_state.current_image = None
+        st.session_state.last_processed_id = None
+        st.rerun()
