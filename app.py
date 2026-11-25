@@ -14,7 +14,6 @@ try:
 except Exception:
     api_key = os.getenv("GEMINI_API_KEY")
 
-# تصميم واجهة الروبوت والأنيميشن
 st.markdown("""
 <style>
     @import url('https://googleapis.com');
@@ -63,20 +62,10 @@ st.markdown("""
         0%, 94%, 100% { transform: scaleY(1); }
         97% { transform: scaleY(0.1); }
     }
-    .stButton > button {
-        border-radius: 14px;
-        font-weight: 700;
-        background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
-        color: white;
-        border: none;
-        padding: 12px;
-        font-size: 1.05rem;
-    }
     .stChatMessage { direction: rtl; text-align: right; }
 </style>
 """, unsafe_allow_html=True)
 
-# دالة تشغيل الصوت تلقائياً بدون الضغط على زر
 def autoplay_audio(text_to_speak):
     try:
         tts = gTTS(text=text_to_speak, lang="ar")
@@ -93,15 +82,13 @@ def autoplay_audio(text_to_speak):
     except Exception:
         pass
 
-# دالة الاتصال الذكي بموديلات Gemini لتفادي أي ضغط سيرفرات
 def ask_gemini(contents_list):
     client = genai.Client(api_key=api_key)
     candidate_models = [
         "gemini-2.5-flash-lite",
-        "gemini-3.8-flash-lite",
-        "gemini-3.8-flash",
-        "gemini-2.0-flash",
-        "gemini-1.5-flash"
+        "gemini-2.5-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-2.0-flash"
     ]
     try:
         for m in client.models.list():
@@ -155,9 +142,9 @@ with st.sidebar:
     if st.button("🗑️ مسح المحادثة والبدء من جديد", use_container_width=True):
         st.session_state.chat_history = []
         st.session_state.current_image = None
+        st.session_state.last_processed_id = None
         st.rerun()
 
-# واجهة رأس الروبوت المتحرك
 st.markdown(f"""
 <div class="robot-header">
     <div class="robot-avatar">
@@ -193,7 +180,6 @@ with col1:
 with col2:
     st.subheader("💬 حوارك المباشر مع الروبوت")
     
-    # التحليل التلقائي فور التقاط أو رفع صورة جديدة
     if img_file is not None:
         file_id = f"{img_file.name}_{img_file.size}"
         if st.session_state.last_processed_id != file_id:
@@ -225,13 +211,11 @@ with col2:
                     except Exception as e:
                         st.error(f"حدث خطأ: {e}")
 
-    # عرض سجل المحادثة مع الروبوت
     for msg in st.session_state.chat_history:
         avatar = "🤖" if msg["role"] == "assistant" else "🧑"
         with st.chat_message(msg["role"], avatar=avatar):
             st.markdown(msg["content"])
 
-    # خانة الدردشة المستمرة مع الروبوت حول الصورة
     follow_up = st.chat_input("اسأل الروبوت أي سؤال تاني عن الصورة أو الأسعار...")
     if follow_up:
         st.session_state.chat_history.append({"role": "user", "content": follow_up})
@@ -252,3 +236,9 @@ with col2:
                         سؤال المستخدم الحالي: {follow_up}
                         """
                         contents_payload = [st.session_state.current_image, chat_prompt] if st.session_state.current_image else [chat_prompt]
+                        bot_reply = ask_gemini(contents_payload)
+                        st.markdown(bot_reply)
+                        st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
+                        autoplay_audio(bot_reply)
+                    except Exception as e:
+                        st.error(f"حدث خطأ: {e}")
