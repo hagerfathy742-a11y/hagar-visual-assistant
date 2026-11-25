@@ -65,7 +65,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("1️⃣ إدخال الصورة")
@@ -86,10 +86,14 @@ with col2:
                         client = Groq(api_key=api_key)
                         b64_img = base64.b64encode(img_file.getvalue()).decode("utf-8")
                         
-                        # اختيار موديل الرؤية المتاح في حسابك تلقائياً
                         all_models = [m.id for m in client.models.list().data]
-                        vision_candidates = [m for m in all_models if any(k in m.lower() for k in ["vision", "scout", "maverick"])]
-                        vision_model = vision_candidates[0] if vision_candidates else "meta-llama/llama-4-scout-17b-16e-instruct"
+                        vision_candidates = [m for m in all_models if any(k in m.lower() for k in ["vision", "scout", "maverick", "llava"])]
+                        
+                        if not vision_candidates:
+                            st.warning(f"⚠️ حسابك في Groq لا يحتوي حالياً على موديل رؤية (Vision) مفعل. الموديلات المتاحة في حسابك هي: {all_models}")
+                            st.stop()
+
+                        vision_model = vision_candidates[0]
 
                         if mode == "🛍️ مساعد مبيعات بصري للمتاجر":
                             prompt_text = f"""
