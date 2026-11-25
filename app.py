@@ -1,17 +1,17 @@
 import os
 import io
-import base64
 import streamlit as st
-from groq import Groq
+from google import genai
+from PIL import Image
 from pypdf import PdfReader
 from gtts import gTTS
 
 st.set_page_config(page_title="Hagar Visual AI - المساعد البصري الذكي", page_icon="👁️", layout="wide")
 
 try:
-    api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+    api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
 except Exception:
-    api_key = os.getenv("GROQ_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY")
 
 st.markdown("""
 <style>
@@ -79,21 +79,12 @@ with col2:
         st.image(img_file, caption="الصورة المدخلة", use_container_width=True)
         if st.button("🚀 ابدأ التحليل البصري الآن", use_container_width=True):
             if not api_key:
-                st.error("⚠️ تأكد من إضافة مفتاح GROQ_API_KEY في إعدادات Secrets.")
+                st.error("⚠️ تأكد من إضافة مفتاح GEMINI_API_KEY في إعدادات Secrets.")
             else:
                 with st.spinner("جاري فحص الصورة وتحليل التفاصيل..."):
                     try:
-                        client = Groq(api_key=api_key)
-                        b64_img = base64.b64encode(img_file.getvalue()).decode("utf-8")
-                        
-                        all_models = [m.id for m in client.models.list().data]
-                        vision_candidates = [m for m in all_models if any(k in m.lower() for k in ["vision", "scout", "maverick", "llava"])]
-                        
-                        if not vision_candidates:
-                            st.warning(f"⚠️ حسابك في Groq لا يحتوي حالياً على موديل رؤية (Vision) مفعل. الموديلات المتاحة في حسابك هي: {all_models}")
-                            st.stop()
-
-                        vision_model = vision_candidates[0]
+                        client = genai.Client(api_key=api_key)
+                        pil_image = Image.open(img_file)
 
                         if mode == "🛍️ مساعد مبيعات بصري للمتاجر":
                             prompt_text = f"""
@@ -113,19 +104,12 @@ with col2:
                             سؤال المستخدم: {user_question}
                             """
 
-                        response = client.chat.completions.create(
-                            model=vision_model,
-                            messages=[{
-                                "role": "user",
-                                "content": [
-                                    {"type": "text", "text": prompt_text},
-                                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}
-                                ]
-                            }],
-                            temperature=0.3
+                        response = client.models.generate_content(
+                            model="gemini-2.5-flash",
+                            contents=[pil_image, prompt_text]
                         )
                         
-                        reply = response.choices[0].message.content
+                        reply = response.text
                         st.success("✅ نتيجة التحليل:")
                         st.markdown(reply)
 
