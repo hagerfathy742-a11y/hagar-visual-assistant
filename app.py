@@ -1,11 +1,12 @@
 import os
 import io
 import base64
+import asyncio
+import edge_tts
 import streamlit as st
 from google import genai
 from PIL import Image
 from pypdf import PdfReader
-from gtts import gTTS
 
 st.set_page_config(page_title="Hagar Robot AI", page_icon="🤖", layout="centered", initial_sidebar_state="collapsed")
 
@@ -54,15 +55,24 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-def autoplay_fast_audio(text_to_speak):
+# دالة توليد صوت بشري مصري طبيعي وسريع
+async def generate_human_voice(text, voice_id):
+    communicate = edge_tts.Communicate(text, voice_id, rate="+18%")
+    audio_bytes = b""
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            audio_bytes += chunk["data"]
+    return audio_bytes
+
+def speak_like_human(text_to_speak, voice_choice):
     try:
-        clean_text = text_to_speak.replace("*", "").replace("#", "")
-        tts = gTTS(text=clean_text, lang="ar", slow=False)
-        audio_fp = io.BytesIO()
-        tts.write_to_fp(audio_fp)
-        audio_fp.seek(0)
-        b64_audio = base64.b64encode(audio_fp.read()).decode()
-        audio_html = f'<audio id="robotVoice" autoplay="true" controls style="width:100%;height:38px;margin-top:8px;"><source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3"></audio><script>var a=document.getElementById("robotVoice");if(a){{a.playbackRate=1.35;a.play().catch(function(e){{}});}}</script>'
+        clean_text = text_to_speak.replace("*", "").replace("#", "").replace("-", " ")
+        voice_id = "ar-EG-SalmaNeural" if "بنت" in voice_choice else "ar-EG-ShakirNeural"
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        audio_data = loop.run_until_complete(generate_human_voice(clean_text, voice_id))
+        b64_audio = base64.b64encode(audio_data).decode()
+        audio_html = f'<audio id="humanVoice" autoplay="true" controls style="width:100%;height:38px;margin-top:8px;"><source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3"></audio><script>var a=document.getElementById("humanVoice");if(a){{a.play().catch(function(e){{}});}}</script>'
         st.components.v1.html(audio_html, height=55)
     except Exception:
         pass
@@ -84,13 +94,13 @@ def ask_gemini(contents_list):
                 return response.text
         except Exception:
             continue
-    return "عذراً يا فندم، السيرفر مشغول حالياً، جرب تبعت تاني بعد ثواني."
+    return "معلش يا فندم، الشبكة تقيلة لحظة، جرب تبعتلي تاني كده."
 
-with st.expander("⚙️ إعدادات الروبوت وتخصيص المتجر (اضغط للفتح)"):
+with st.expander("⚙️ إعدادات الروبوت وصوته (اضغط للفتح)"):
     robot_name = st.text_input("اسم الروبوت", value="روبوت هاجر الذكي")
-    mode = st.selectbox("وضع التشغيل:", ["🌍 شامل (يتعرف على أي شيء ويقدّر سعره)", "🛍️ مخصص لكتالوج متجر"])
+    voice_type = st.selectbox("نبرة الصوت البشري:", ["👩 صوت بنت مصرية (سلمى - طبيعي وودود)", "👨 صوت شاب مصري (شاكر - حيوي وسريع)"])
     whatsapp = st.text_input("رقم الواتساب", value="01000000000")
-    catalog_text = st.text_area("قائمة المنتجات (اختياري):", value="", height=80)
+    catalog_text = st.text_area("قائمة منتجات المتجر (اختياري):", value="", height=80)
 
 st.markdown(f"""
 <div class="robot-card">
@@ -100,7 +110,7 @@ st.markdown(f"""
         <div class="robot-mouth"></div>
     </div>
     <div class="robot-title">🤖 {robot_name}</div>
-    <p class="robot-sub">ورّيني أي حاجة بالكاميرا أو الصورة، وهقولك هي إيه وسعرها كام بصوتي فوراً!</p>
+    <p class="robot-sub">ورّيني أي حاجة بالكاميرا أو الصورة، وهكلمك عنها بصوت مصري طبيعي وأقولك سعرها فوراً!</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -124,12 +134,12 @@ if img_file is not None:
         if not api_key:
             st.error("⚠️ تأكد من وضع GEMINI_API_KEY في Secrets.")
         else:
-            with st.spinner("🤖 جاري الفحص والتحليل السريع..."):
-                sys_prompt = f"أنت {robot_name}، روبوت بصري ذكي. تحدث باللهجة المصرية السريعة والواضحة في 3 جمل مركزة فقط: قول فوراً إيه الشيء أو المنتج الموجود في الصورة ومواصفاته، ومتوسط سعره في السوق المصري بالجنيه، واقرأ أي كتابة عليه. بيانات إضافية: {catalog_text} - واتساب: {whatsapp}"
-                first_reply = ask_gemini([st.session_state.current_image, sys_prompt])
+            with st.spinner("🤖 ثواني ببص على الصورة..."):
+                human_prompt = f"أنت {robot_name}. اتكلم بالعامية المصرية الطبيعية جداً كأنك إنسان مصري ودود وذكي واقف جنب صاحبك، بلاش كلام رسمي أو آلي أبداً! في 3 جمل قصيرة وسريعة: قول إيه اللي في الصورة بعفوية، وقدّر سعره في السوق المصري بالجنيه، ولو في كتابة مهمة اقرأها، واسأله لو حابب يعرف حاجة تانية. بيانات إضافية: {catalog_text} - واتساب: {whatsapp}"
+                first_reply = ask_gemini([st.session_state.current_image, human_prompt])
                 st.session_state.last_processed_id = file_id
                 st.session_state.chat_history = [{"role": "assistant", "content": first_reply}]
-                autoplay_fast_audio(first_reply)
+                speak_like_human(first_reply, voice_type)
 
 if st.session_state.chat_history:
     st.markdown("### 💬 حوار الروبوت")
@@ -141,16 +151,10 @@ if st.session_state.chat_history:
         st.session_state.last_processed_id = None
         st.rerun()
 
-follow_up = st.chat_input("اسأل الروبوت أي سؤال تاني عن الصورة أو الأسعار...")
+follow_up = st.chat_input("اتكلم مع الروبوت واسأله أي سؤال...")
 if follow_up:
     st.session_state.chat_history.append({"role": "user", "content": follow_up})
     st.chat_message("user", avatar="🧑").markdown(follow_up)
     if api_key:
-        with st.spinner("🤖 الروبوت يرد..."):
+        with st.spinner("🤖 بيرد عليك..."):
             history_text = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.chat_history])
-            chat_prompt = f"أنت {robot_name}. رد باللهجة المصرية السريعة والمختصرة جداً (جملتين أو تلاتة) بناءً على الصورة وسجل الحوار: {history_text} - سؤال المستخدم: {follow_up}"
-            contents_payload = [st.session_state.current_image, chat_prompt] if st.session_state.current_image else [chat_prompt]
-            bot_reply = ask_gemini(contents_payload)
-            st.chat_message("assistant", avatar="🤖").markdown(bot_reply)
-            st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
-            autoplay_fast_audio(bot_reply)
