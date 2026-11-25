@@ -7,12 +7,7 @@ from PIL import Image
 from pypdf import PdfReader
 from gtts import gTTS
 
-st.set_page_config(
-    page_title="Hagar Robot AI",
-    page_icon="🤖",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
+st.set_page_config(page_title="Hagar Robot AI", page_icon="🤖", layout="centered", initial_sidebar_state="collapsed")
 
 try:
     api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
@@ -42,10 +37,7 @@ st.markdown("""
         position: relative; animation: hoverRobot 2.8s ease-in-out infinite;
     }
     .robot-antenna { width: 6px; height: 16px; background: #38BDF8; position: absolute; top: -18px; border-radius: 4px; }
-    .robot-antenna::after {
-        content: ""; width: 12px; height: 12px; background: #A855F7; border-radius: 50%;
-        position: absolute; top: -8px; left: -3px; box-shadow: 0 0 12px #A855F7;
-    }
+    .robot-antenna::after { content: ""; width: 12px; height: 12px; background: #A855F7; border-radius: 50%; position: absolute; top: -8px; left: -3px; box-shadow: 0 0 12px #A855F7; }
     .robot-eyes { display: flex; gap: 20px; margin-bottom: 10px; }
     .eye { width: 20px; height: 20px; background: #38BDF8; border-radius: 50%; box-shadow: 0 0 14px #38BDF8, 0 0 28px #38BDF8; animation: blinkEye 3.5s infinite; }
     .robot-mouth { width: 34px; height: 6px; background: #A855F7; border-radius: 10px; box-shadow: 0 0 10px #A855F7; animation: talkPulse 1.2s infinite alternate; }
@@ -70,18 +62,7 @@ def autoplay_fast_audio(text_to_speak):
         tts.write_to_fp(audio_fp)
         audio_fp.seek(0)
         b64_audio = base64.b64encode(audio_fp.read()).decode()
-        audio_html = f"""
-            <audio id="robotVoice" autoplay="true" controls style="width: 100%; height: 38px; margin-top: 8px; border-radius: 10px;">
-                <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
-            </audio>
-            <script>
-                var audio = document.getElementById("robotVoice");
-                if (audio) {{
-                    audio.playbackRate = 1.35;
-                    audio.play().catch(function(e) {{ console.log(e); }});
-                }}
-            </script>
-        """
+        audio_html = f'<audio id="robotVoice" autoplay="true" controls style="width:100%;height:38px;margin-top:8px;"><source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3"></audio><script>var a=document.getElementById("robotVoice");if(a){{a.playbackRate=1.35;a.play().catch(function(e){{}});}}</script>'
         st.components.v1.html(audio_html, height=55)
     except Exception:
         pass
@@ -96,7 +77,6 @@ def ask_gemini(contents_list):
                 candidate_models.append(name)
     except Exception:
         pass
-
     last_err = None
     for model_name in candidate_models:
         try:
@@ -105,25 +85,13 @@ def ask_gemini(contents_list):
                 return response.text
         except Exception as err:
             last_err = err
-            continue
     raise last_err
 
 with st.expander("⚙️ إعدادات الروبوت وتخصيص المتجر (اضغط للفتح)"):
     robot_name = st.text_input("اسم الروبوت", value="روبوت هاجر الذكي")
     mode = st.selectbox("وضع التشغيل:", ["🌍 شامل (يتعرف على أي شيء ويقدّر سعره)", "🛍️ مخصص لكتالوج متجر"])
     whatsapp = st.text_input("رقم الواتساب", value="01000000000")
-    catalog_text = ""
-    if mode == "🛍️ مخصص لكتالوج متجر":
-        uploaded_catalog = st.file_uploader("📄 كتالوج المنتجات (PDF / TXT)", type=["pdf", "txt"])
-        if uploaded_catalog:
-            if uploaded_catalog.name.endswith(".pdf"):
-                reader = PdfReader(uploaded_catalog)
-                for page in reader.pages:
-                    catalog_text += (page.extract_text() or "") + "\n"
-            else:
-                catalog_text = uploaded_catalog.read().decode("utf-8", errors="ignore")
-        else:
-            catalog_text = st.text_area("قائمة المنتجات:", value="", height=90)
+    catalog_text = st.text_area("قائمة المنتجات (اختياري):", value="", height=80)
 
 st.markdown(f"""
 <div class="robot-card">
@@ -152,7 +120,6 @@ if img_file is not None:
     pil_img = Image.open(img_file)
     st.session_state.current_image = pil_img
     st.image(pil_img, caption="الصورة أمام الروبوت الآن", use_container_width=True)
-
     file_id = f"{img_file.name}_{img_file.size}"
     if st.session_state.last_processed_id != file_id:
         if not api_key:
@@ -160,11 +127,7 @@ if img_file is not None:
         else:
             with st.spinner("🤖 جاري الفحص والتحليل السريع..."):
                 try:
-                    if mode == "🌍 شامل (يتعرف على أي شيء ويقدّر سعره)":
-                        sys_prompt = f"أنت {robot_name}، روبوت بصري ذكي. تحدث باللهجة المصرية السريعة والواضحة في 3 جمل مركزة فقط: قول فوراً إيه الشيء أو المنتج الموجود في الصورة ومواصفاته، ومتوسط سعره في السوق المصري بالجنيه، واقرأ أي كتابة عليه واسأل المستخدم لو محتاج تفاصيل تانية."
-                    else:
-                        sys_prompt = f"أنت {robot_name}، روبوت مبيعات بصري. تحدث باللهجة المصرية السريعة في 3 جمل فقط: حدد المنتج في الصورة وسعره في السوق، وقارنه بالكتالوج التالي: {catalog_text}، واعرض التواصل عبر واتساب {whatsapp}."
-                    
+                    sys_prompt = f"أنت {robot_name}، روبوت بصري ذكي. تحدث باللهجة المصرية السريعة والواضحة في 3 جمل مركزة فقط: قول فوراً إيه الشيء أو المنتج الموجود في الصورة ومواصفاته، ومتوسط سعره في السوق المصري بالجنيه، واقرأ أي كتابة عليه. بيانات إضافية: {catalog_text} - واتساب: {whatsapp}"
                     first_reply = ask_gemini([st.session_state.current_image, sys_prompt])
                     st.session_state.last_processed_id = file_id
                     st.session_state.chat_history = [{"role": "assistant", "content": first_reply}]
@@ -175,5 +138,24 @@ if img_file is not None:
 if st.session_state.chat_history:
     st.markdown("### 💬 حوار الروبوت")
     for msg in st.session_state.chat_history:
-        avatar = "🤖" if msg["role"] == "assistant" else "🧑"
-        with st.chat_message(msg["role"], avatar=avatar):
+        st.chat_message(msg["role"], avatar="🤖" if msg["role"] == "assistant" else "🧑").markdown(msg["content"])
+    if st.button("🗑️ محادثة جديدة", use_container_width=True):
+        st.session_state.chat_history = []
+        st.session_state.current_image = None
+        st.session_state.last_processed_id = None
+        st.rerun()
+
+follow_up = st.chat_input("اسأل الروبوت أي سؤال تاني عن الصورة أو الأسعار...")
+if follow_up:
+    st.session_state.chat_history.append({"role": "user", "content": follow_up})
+    st.chat_message("user", avatar="🧑").markdown(follow_up)
+    if not api_key:
+        st.error("⚠️ تأكد من وضع مفتاح API.")
+    else:
+        with st.spinner("🤖 الروبوت يرد..."):
+            try:
+                history_text = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.chat_history])
+                chat_prompt = f"أنت {robot_name}. رد باللهجة المصرية السريعة والمختصرة جداً (جملتين أو تلاتة) بناءً على الصورة وسجل الحوار: {history_text} - سؤال المستخدم: {follow_up}"
+                contents_payload = [st.session_state.current_image, chat_prompt] if st.session_state.current_image else [chat_prompt]
+                bot_reply = ask_gemini(contents_payload)
+                st.chat_message("assistant", avatar="🤖").markdown(bot_reply)
