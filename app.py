@@ -77,15 +77,14 @@ def ask_gemini(contents_list):
                 candidate_models.append(name)
     except Exception:
         pass
-    last_err = None
     for model_name in candidate_models:
         try:
             response = client.models.generate_content(model=model_name, contents=contents_list)
             if response and response.text:
                 return response.text
-        except Exception as err:
-            last_err = err
-    raise last_err
+        except Exception:
+            continue
+    return "عذراً يا فندم، السيرفر مشغول حالياً، جرب تبعت تاني بعد ثواني."
 
 with st.expander("⚙️ إعدادات الروبوت وتخصيص المتجر (اضغط للفتح)"):
     robot_name = st.text_input("اسم الروبوت", value="روبوت هاجر الذكي")
@@ -126,14 +125,11 @@ if img_file is not None:
             st.error("⚠️ تأكد من وضع GEMINI_API_KEY في Secrets.")
         else:
             with st.spinner("🤖 جاري الفحص والتحليل السريع..."):
-                try:
-                    sys_prompt = f"أنت {robot_name}، روبوت بصري ذكي. تحدث باللهجة المصرية السريعة والواضحة في 3 جمل مركزة فقط: قول فوراً إيه الشيء أو المنتج الموجود في الصورة ومواصفاته، ومتوسط سعره في السوق المصري بالجنيه، واقرأ أي كتابة عليه. بيانات إضافية: {catalog_text} - واتساب: {whatsapp}"
-                    first_reply = ask_gemini([st.session_state.current_image, sys_prompt])
-                    st.session_state.last_processed_id = file_id
-                    st.session_state.chat_history = [{"role": "assistant", "content": first_reply}]
-                    autoplay_fast_audio(first_reply)
-                except Exception as e:
-                    st.error(f"حدث خطأ: {e}")
+                sys_prompt = f"أنت {robot_name}، روبوت بصري ذكي. تحدث باللهجة المصرية السريعة والواضحة في 3 جمل مركزة فقط: قول فوراً إيه الشيء أو المنتج الموجود في الصورة ومواصفاته، ومتوسط سعره في السوق المصري بالجنيه، واقرأ أي كتابة عليه. بيانات إضافية: {catalog_text} - واتساب: {whatsapp}"
+                first_reply = ask_gemini([st.session_state.current_image, sys_prompt])
+                st.session_state.last_processed_id = file_id
+                st.session_state.chat_history = [{"role": "assistant", "content": first_reply}]
+                autoplay_fast_audio(first_reply)
 
 if st.session_state.chat_history:
     st.markdown("### 💬 حوار الروبوت")
@@ -149,13 +145,12 @@ follow_up = st.chat_input("اسأل الروبوت أي سؤال تاني عن �
 if follow_up:
     st.session_state.chat_history.append({"role": "user", "content": follow_up})
     st.chat_message("user", avatar="🧑").markdown(follow_up)
-    if not api_key:
-        st.error("⚠️ تأكد من وضع مفتاح API.")
-    else:
+    if api_key:
         with st.spinner("🤖 الروبوت يرد..."):
-            try:
-                history_text = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.chat_history])
-                chat_prompt = f"أنت {robot_name}. رد باللهجة المصرية السريعة والمختصرة جداً (جملتين أو تلاتة) بناءً على الصورة وسجل الحوار: {history_text} - سؤال المستخدم: {follow_up}"
-                contents_payload = [st.session_state.current_image, chat_prompt] if st.session_state.current_image else [chat_prompt]
-                bot_reply = ask_gemini(contents_payload)
-                st.chat_message("assistant", avatar="🤖").markdown(bot_reply)
+            history_text = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.chat_history])
+            chat_prompt = f"أنت {robot_name}. رد باللهجة المصرية السريعة والمختصرة جداً (جملتين أو تلاتة) بناءً على الصورة وسجل الحوار: {history_text} - سؤال المستخدم: {follow_up}"
+            contents_payload = [st.session_state.current_image, chat_prompt] if st.session_state.current_image else [chat_prompt]
+            bot_reply = ask_gemini(contents_payload)
+            st.chat_message("assistant", avatar="🤖").markdown(bot_reply)
+            st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
+            autoplay_fast_audio(bot_reply)
